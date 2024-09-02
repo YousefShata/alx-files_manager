@@ -4,7 +4,7 @@ class DBClient {
   constructor() {
     const uri = 'mongodb://localhost:27017/files_manager';
     this.client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    this.isConnected = true;
+    this.isConnected = false;
     this.client.connect()
       .then(() => {
         this.isConnected = true;
@@ -19,13 +19,15 @@ class DBClient {
   }
 
   async nbUsers() {
-    const coll = this.client.collection('users');
-    coll.count().then((count) => count);
+    const db = this.client.db('files_manager');
+    const coll = db.collection('users');
+    return coll.countDocuments();
   }
 
   async nbFiles() {
-    const coll = this.client.collection('files');
-    coll.count().then((count) => count);
+    const db = this.client.db('files_manager');
+    const coll = db.collection('files');
+    return coll.countDocuments();
   }
 }
 const dbClient = new DBClient();
