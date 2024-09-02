@@ -1,0 +1,31 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Directory for instrumented lib
+lib-cov
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
+# TypeScript v1 declaration files
+typings/
+
+# VSCode settings
+.vscode/
+
+# Environment variables
+.env
