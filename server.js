@@ -6,7 +6,7 @@ require('dotenv').config();
 const PORT = process.env.PORT || 5000;
 const routes = require('./routes/index');
 
-app.use(routes);
+app.use('/api', routes);
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
