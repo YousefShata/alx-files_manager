@@ -7,5 +7,3 @@ router.get('/status', getStatus);
 router.get('/stats', getStats);
 
 module.exports = router;
-
-export default app;
