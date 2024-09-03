@@ -2,38 +2,41 @@ import dbClient from '../utils/db';
 
 const crypto = require('crypto');
 
-class UserController {
+class UsersController {
   static async postNew(req, res) {
     const newUser = req.body;
+
     try {
-      if (newUser.email == null) {
-        res.status(400).json({
-          error: 'Missing email',
-        });
+      // Validate email
+      if (!newUser.email) {
+        return res.status(400).json({ error: 'Missing email' });
       }
-      if (newUser.password == null) {
-        res.status(400).json({
-          error: 'Missing Password',
-        });
+
+      // Validate password
+      if (!newUser.password) {
+        return res.status(400).json({ error: 'Missing Password' });
       }
-      const user = await dbClient.collection('users').findOne({ email: newUser.email });
+
+      // Check if user already exists
+      const user = await dbClient.db.collection('users').findOne({ email: newUser.email });
       if (user) {
-        res.status(400).json({
-          error: 'Already exist',
-        });
+        return res.status(400).json({ error: 'Already exist' });
       }
+
+      // Hash the password
       const hashedPassword = crypto.createHash('sha1').update(newUser.password).digest('hex');
       newUser.password = hashedPassword;
 
-      const result = await dbClient.client.collection('users').insertOne(newUser);
-      res.status(201).json({
+      const result = await dbClient.db.collection('users').insertOne(newUser);
+      return res.status(201).json({
         id: result.insertedId,
-        email: result.email,
+        email: newUser.email,
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 }
 
-module.exports = UserController;
+module.exports = UsersController;

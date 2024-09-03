@@ -8,6 +8,7 @@ class DBClient {
     this.client.connect()
       .then(() => {
         this.isConnected = true;
+        this.db = this.client.db('files_manager');
       })
       .catch(() => {
         this.isConnected = false;
@@ -19,14 +20,12 @@ class DBClient {
   }
 
   async nbUsers() {
-    const db = this.client.db('files_manager');
-    const coll = db.collection('users');
+    const coll = this.db.collection('users');
     return coll.countDocuments();
   }
 
   async nbFiles() {
-    const db = this.client.db('files_manager');
-    const coll = db.collection('files');
+    const coll = this.db.collection('files');
     return coll.countDocuments();
   }
 }
