@@ -9,10 +9,10 @@ const getStatus = (req, res) => {
   res.status(200).json(data);
 };
 
-const getStats = (req, res) => {
+const getStats = async (req, res) => {
   const counts = {
-    users: dbClient.nbUsers,
-    files: dbClient.nbFiles,
+    users: await dbClient.nbUsers,
+    files: await dbClient.nbFiles,
   };
 
   res.status(200).json(counts);
