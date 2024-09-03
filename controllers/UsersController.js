@@ -1,5 +1,7 @@
 import dbClient from '../utils/db';
 
+const crypto = require('crypto');
+
 class UserController {
   static async postNew(req, res) {
     const newUser = req.body;
@@ -20,6 +22,9 @@ class UserController {
           error: 'Already exist',
         });
       }
+      const hashedPassword = crypto.createHash('sha1').update(newUser.password).digest('hex');
+      newUser.password = hashedPassword;
+
       const result = await dbClient.client.collection('users').insertOne(newUser);
       res.status(201).json({
         id: result.insertedId,
