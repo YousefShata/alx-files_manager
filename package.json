@@ -4,18 +4,19 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-    "lint": "npx eslint",
-    "check-lint": "npx eslint [0-9]*.js",
-    "start-server": "npx nodemon --exec babel-node --presets @babel/preset-env ./server.js",
-    "start-worker": "npx nodemon --exec babel-node --presets @babel/preset-env ./worker.js",
-    "dev": "npx nodemon --exec babel-node --presets @babel/preset-env",
-    "test": "npx mocha --require @babel/register --exit"
+        "lint": "npx eslint",
+        "check-lint": "npx eslint [0-9]*.js",
+        "start-server": "npx nodemon --exec babel-node --presets @babel/preset-env ./server.js",
+        "start-worker": "npx nodemon --exec babel-node --presets @babel/preset-env ./worker.js",
+        "dev": "npx nodemon --exec babel-node --presets @babel/preset-env",
+        "test": "npx mocha --require @babel/register --exit"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
         "bull": "^3.16.0",
         "chai-http": "^4.3.0",
+        "dotenv": "^16.4.5",
         "express": "^4.17.1",
         "image-thumbnail": "^1.0.10",
         "mime-types": "^2.1.27",
