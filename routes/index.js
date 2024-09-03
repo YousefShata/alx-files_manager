@@ -1,5 +1,6 @@
-const { getStatus, getStats } = require('../controller/AppController');
 const express = require('express');
+const { getStatus, getStats } = require('../controllers/AppController');
+
 const router = express.Router();
 
 router.get('/status', getStatus);
