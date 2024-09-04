@@ -37,6 +37,16 @@ class UsersController {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
+	static async getMe(req, res) {
+		const token = req.headers.['x-token']
+                await const foundToken = redisClient.get(`auth_${token}`)
+		if (!foundToken) {
+                        return res.status(401).json({ error: "Unauthorized" });
+                } else {
+                        await const object = dbClient.db.collection('users').findOne({ _id: foundToken });
+                        res.json({ id: object._id, email: object.email });
+                }
+	}
 }
 
 module.exports = UsersController;
