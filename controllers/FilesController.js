@@ -70,46 +70,47 @@ class FilesController {
       return res.status(500).json({ error: err });
     }
   }
-	static async getShow(req, res) {
-		const id = req.params.id
-		const token = req.headers['x-token'];
-		const foundToken = await redisClient.get(`auth_${token}`);
-		if (!foundToken) {
-			return res.status(401).json({ error: 'Unauthorized' });
-		}
-		const docFound = await dbClient.db.collection('files').findOne({
-			_id: new ObjectId(id),
-			userId: new ObjectId(token)
-		});
-		if (!docFound) {
-			return res.status(404).json({ error: 'Not found' })
-		}
-		return res.status(200).json({ docFound });
-	}
 
-	static async getIndex(req, res) {
-		const token = req.headers['x-token'];
-                const foundToken = await redisClient.get(`auth_${token}`);
-                if (!foundToken) {
-                        return res.status(401).json({ error: 'Unauthorized' });
-                }
-		const parentId = req.query.parentId || 0;
-		const page = parseInt(req.query.page) || 0;
-		const itemsPerPage = 20;
-		const skipCount = page * itemsPerPage;
-		
-		const pipeline = [
-			{ $match: { parentId: parentId } },
-			{ $skip: skipCount },
-			{ $limit: itemsPerPage }
-		];
-		dbClient.db.collection('files').aggregate(pipeline).toArray((err, files) => {
-			if (err) {
-				return res.status(500).send('Internal Server Error');
-			}
-			res.status(200).json(files);
-		});
-	}
+  static async getShow(req, res) {
+    const { id } = req.params;
+    const token = req.headers['x-token'];
+    const foundToken = await redisClient.get(`auth_${token}`);
+    if (!foundToken) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const docFound = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(id),
+      userId: new ObjectId(token),
+    });
+    if (!docFound) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    return res.status(200).json({ docFound });
+  }
+
+  static async getIndex(req, res) {
+    const token = req.headers['x-token'];
+    const foundToken = await redisClient.get(`auth_${token}`);
+    if (!foundToken) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const parentId = req.query.parentId || 0;
+    const page = parseInt(req.query.page, 10) || 0;
+    const itemsPerPage = 20;
+    const skipCount = page * itemsPerPage;
+
+    const pipeline = [
+      { $match: { parentId } },
+      { $skip: skipCount },
+      { $limit: itemsPerPage },
+    ];
+    try {
+      const files = await dbClient.db.collection('files').aggregate(pipeline).toArray();
+      return res.status(200).json(files);
+    } catch (err) {
+      return res.status(500).send('Internal Server Error');
+    }
+  }
 }
 
 module.exports = FilesController;
