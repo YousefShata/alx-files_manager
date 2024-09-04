@@ -1,6 +1,6 @@
-import dbClient from '../utils/db';
 import crypto from 'crypto';
-
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 
 class UsersController {
   static async postNew(req, res) {
@@ -37,16 +37,16 @@ class UsersController {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
-	static async getMe(req, res) {
-		const token = req.headers.['x-token']
-                await const foundToken = redisClient.get(`auth_${token}`)
-		if (!foundToken) {
-                        return res.status(401).json({ error: "Unauthorized" });
-                } else {
-                        await const object = dbClient.db.collection('users').findOne({ _id: foundToken });
-                        res.json({ id: object._id, email: object.email });
-                }
-	}
+
+  static async getMe(req, res) {
+    const token = req.headers['x-token'];
+    const foundToken = await redisClient.get(`auth_${token}`);
+    if (!foundToken) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const object = await dbClient.db.collection('users').findOne({ _id: foundToken });
+    return res.json({ id: object._id, email: object.email });
+  }
 }
 
 module.exports = UsersController;
