@@ -5,7 +5,7 @@ import dbClient from '../utils/db';
 
 class AuthController {
   static async getConnect(req, res) {
-    const authHeaderList = req.headers.authorization.split('');
+    const authHeaderList = req.headers.authorization.split(' ');
     if (authHeaderList[0] === 'Basic') {
       const authString = authHeaderList[1];
       const buffer = Buffer.from(authString, 'base64');
@@ -20,7 +20,7 @@ class AuthController {
         }
         const token = uuid();
         const key = `auth_${token}`;
-        await redisClient.set(key, user._id, 86400);
+        await redisClient.set(key, user._id.toString(), 86400);
 
         return res.status(200).json({ token });
       } catch (err) {
@@ -36,8 +36,8 @@ class AuthController {
     if (!foundToken) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    await redisClient.del(token);
-    return res.status(204);
+    await redisClient.del(`auth_${token}`);
+    return res.status(204).send();
   }
 }
 module.exports = AuthController;
