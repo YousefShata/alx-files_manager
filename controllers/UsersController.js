@@ -1,6 +1,6 @@
 import dbClient from '../utils/db';
+import crypto from 'crypto';
 
-const crypto = require('crypto');
 
 class UsersController {
   static async postNew(req, res) {
