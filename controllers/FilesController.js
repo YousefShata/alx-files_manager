@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 import path from 'path';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
+import mime from 'mime-type';
 
 class FilesController {
   static async getStatus(req, res) {
@@ -121,7 +122,7 @@ class FilesController {
     }
     const docFound = await dbClient.db.collection('files').findOne({
       _id: new ObjectId(id),
-      userId: new ObjectId(token),
+      userId: new ObjectId(foundToken),
     });
     if (!docFound) {
       return res.status(404).json({ error: 'Not found' });
@@ -143,7 +144,7 @@ class FilesController {
     }
     const docFound = await dbClient.db.collection('files').findOne({
       _id: new ObjectId(id),
-      userId: new ObjectId(token),
+      userId: new ObjectId(foundToken),
     });
     if (!docFound) {
       return res.status(404).json({ error: 'Not found' });
@@ -155,6 +156,39 @@ class FilesController {
     { $set: { isPublic: false } });
     return res.status(200).json({ publishedDoc });
   }
+	static async getFile(req, res) {
+		const { id } = req.params;
+		const token = req.headers['x-token'];
+		const user = await redisClient.get(`auth_${token}`);
+		const docFound = await dbClient.db.collection('files').findOne({
+			_id: new ObjectId(id)
+		});
+		if (!docFound) {
+			return res.status(404).json({ error: 'Not found' });
+		}
+		if (docFound.isPublic === false) {
+			if(!user || docFound.userId !== user) {
+				return res.status(404).json({ error: 'Not found' });
+			}
+		}
+		if (docFound.type === 'folder') {
+			return res.status(400).json({ error: 'A folder doesn\'t have content' });
+		}
+		if (!docFound.localPath) {
+			return res.status(404).json({ error: 'Not found' });
+		}
+		const mimeType = mime.lookup(docFound.name);
+
+		await fs.readFile(docFound.localPath, (err, data) {
+			if (err) {
+				return res.status(500).send('Error reading file');
+			}
+
+			res.setHeader('Content-Type', mimeType);
+
+			return res.status(200).send(data);
+		});
+	}
 }
 
 module.exports = FilesController;
