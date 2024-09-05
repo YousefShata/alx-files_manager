@@ -3,9 +3,10 @@ import { ObjectId } from 'mongodb';
 import { v4 as uuid } from 'uuid';
 import path from 'path';
 import mime from 'mime-types';
+import Queue from 'bull';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import Queue from 'bull';
+
 const fileQueue = new Queue('fileQueue');
 
 class FilesController {
@@ -67,12 +68,12 @@ class FilesController {
         parentId: parentId !== 0 ? parentId : 0,
         localPath,
       });
-	    if (type === 'image') {
-		    fileQueue.add({
-			    userId: foundToken,
-			    fileId: result.insertedId.toString();
-		    });
-	    }
+      if (type === 'image') {
+        fileQueue.add({
+          userId: foundToken,
+          fileId: result.insertedId.toString(),
+        });
+      }
       return res.status(201).json({ result });
     } catch (err) {
       return res.status(500).json({ error: err });
@@ -111,7 +112,6 @@ class FilesController {
       { $match: { parentId } },
       { $skip: skipCount },
       { $limit: itemsPerPage },
-	});
     ];
     try {
       const files = await dbClient.db.collection('files').aggregate(pipeline).toArray();
@@ -167,7 +167,7 @@ class FilesController {
 
   static async getFile(req, res) {
     const { id } = req.params;
-    const size = req.query.size;
+    const { size } = req.query;
     const allowedSizes = [500, 250, 100];
     const token = req.headers['x-token'];
     const user = await redisClient.get(`auth_${token}`);
@@ -188,10 +188,17 @@ class FilesController {
     if (!docFound.localPath) {
       return res.status(404).json({ error: 'Not found' });
     }
-	  if (size && allowedSizes.includes(parseInt(size))) {
-		  const ext = path.extname(!docFound.localPath);
-    		docFound.localPath = docFound.localPath.replace(ext, `_${size}${ext}`);
-	  }
+
+    if (!allowedSizes.includes(size)) {
+      return res.status(400).json({ error: 'Invalid size parameter' });
+    }
+
+    const filePath = `${docFound.localPath}_${size}`;
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
     const mimeType = mime.lookup(docFound.name);
 
     try {
