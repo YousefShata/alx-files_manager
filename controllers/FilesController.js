@@ -2,9 +2,9 @@ import fs from 'node:fs/promises';
 import { ObjectId } from 'mongodb';
 import { v4 as uuid } from 'uuid';
 import path from 'path';
+import mime from 'mime-types';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import mime from 'mime-type';
 
 class FilesController {
   static async getStatus(req, res) {
@@ -156,39 +156,38 @@ class FilesController {
     { $set: { isPublic: false } });
     return res.status(200).json({ publishedDoc });
   }
-	static async getFile(req, res) {
-		const { id } = req.params;
-		const token = req.headers['x-token'];
-		const user = await redisClient.get(`auth_${token}`);
-		const docFound = await dbClient.db.collection('files').findOne({
-			_id: new ObjectId(id)
-		});
-		if (!docFound) {
-			return res.status(404).json({ error: 'Not found' });
-		}
-		if (docFound.isPublic === false) {
-			if(!user || docFound.userId !== user) {
-				return res.status(404).json({ error: 'Not found' });
-			}
-		}
-		if (docFound.type === 'folder') {
-			return res.status(400).json({ error: 'A folder doesn\'t have content' });
-		}
-		if (!docFound.localPath) {
-			return res.status(404).json({ error: 'Not found' });
-		}
-		const mimeType = mime.lookup(docFound.name);
 
-		await fs.readFile(docFound.localPath, (err, data) {
-			if (err) {
-				return res.status(500).send('Error reading file');
-			}
+  static async getFile(req, res) {
+    const { id } = req.params;
+    const token = req.headers['x-token'];
+    const user = await redisClient.get(`auth_${token}`);
+    const docFound = await dbClient.db.collection('files').findOne({
+      _id: new ObjectId(id),
+    });
+    if (!docFound) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    if (docFound.isPublic === false) {
+      if (!user || docFound.userId !== user) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+    }
+    if (docFound.type === 'folder') {
+      return res.status(400).json({ error: 'A folder doesn\'t have content' });
+    }
+    if (!docFound.localPath) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    const mimeType = mime.lookup(docFound.name);
 
-			res.setHeader('Content-Type', mimeType);
-
-			return res.status(200).send(data);
-		});
-	}
+    try {
+      const data = await fs.readFile(docFound.localPath);
+      res.setHeader('Content-Type', mimeType);
+      return res.status(200).send(data);
+    } catch (err) {
+      return res.status(500).send('Error reading file');
+    }
+  }
 }
 
 module.exports = FilesController;
