@@ -5,9 +5,11 @@ import path from 'path';
 import mime from 'mime-types';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
+import Queue from 'bull';
+const fileQueue = new Queue('fileQueue');
 
 class FilesController {
-  static async getStatus(req, res) {
+  static async postUpload(req, res) {
     const token = req.headers['x-token'];
     const foundToken = await redisClient.get(`auth_${token}`);
     if (!foundToken) {
@@ -50,7 +52,6 @@ class FilesController {
       });
       res.status(201).json({ result });
     }
-
     try {
       const uuid4 = uuid();
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
@@ -66,6 +67,12 @@ class FilesController {
         parentId: parentId !== 0 ? parentId : 0,
         localPath,
       });
+	    if (type === 'image') {
+		    fileQueue.add({
+			    userId: foundToken,
+			    fileId: result.insertedId.toString();
+		    });
+	    }
       return res.status(201).json({ result });
     } catch (err) {
       return res.status(500).json({ error: err });
@@ -104,6 +111,7 @@ class FilesController {
       { $match: { parentId } },
       { $skip: skipCount },
       { $limit: itemsPerPage },
+	});
     ];
     try {
       const files = await dbClient.db.collection('files').aggregate(pipeline).toArray();
@@ -159,6 +167,8 @@ class FilesController {
 
   static async getFile(req, res) {
     const { id } = req.params;
+    const size = req.query.size;
+    const allowedSizes = [500, 250, 100];
     const token = req.headers['x-token'];
     const user = await redisClient.get(`auth_${token}`);
     const docFound = await dbClient.db.collection('files').findOne({
@@ -178,6 +188,10 @@ class FilesController {
     if (!docFound.localPath) {
       return res.status(404).json({ error: 'Not found' });
     }
+	  if (size && allowedSizes.includes(parseInt(size))) {
+		  const ext = path.extname(!docFound.localPath);
+    		docFound.localPath = docFound.localPath.replace(ext, `_${size}${ext}`);
+	  }
     const mimeType = mime.lookup(docFound.name);
 
     try {
